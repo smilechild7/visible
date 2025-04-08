@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _initCamera();
     _speech = stt.SpeechToText();
     flutterTts.setLanguage('ko-KR');
+    flutterTts.setSpeechRate(0.8);
   }
 
   Future<void> _initCamera() async {
@@ -103,37 +104,37 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _sendTestQuestionWithImage() async {
-    try {
-      final bytes = await rootBundle.load('assets/test_image.png');
-      final base64Image = base64Encode(bytes.buffer.asUint8List());
-      const testQuestion = '이 상품의 정보를 알려줘';
+  // Future<void> _sendTestQuestionWithImage() async {
+  //   try {
+  //     final bytes = await rootBundle.load('assets/test_image.png');
+  //     final base64Image = base64Encode(bytes.buffer.asUint8List());
+  //     const testQuestion = '이 상품의 정보를 알려줘';
 
-      final response = await http.post(
-        Uri.parse('$ipAddress/analyze'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'image_base64': base64Image,
-          'question': testQuestion,
-        }),
-      );
+  //     final response = await http.post(
+  //       Uri.parse('$ipAddress/analyze'),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'image_base64': base64Image,
+  //         'question': testQuestion,
+  //       }),
+  //     );
 
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final result = jsonDecode(decodedBody);
-        final summary = result['summary'] ?? '요약 응답이 없습니다.';
-        setState(() => responseText = summary);
-        await flutterTts.speak(summary);
-      } else {
-        setState(() => responseText = '서버 응답 오류: ${response.statusCode}');
-        await flutterTts.speak('서버 응답 오류');
-      }
-    } catch (e) {
-      print("에러: $e");
-      setState(() => responseText = '오류 발생: $e');
-      await flutterTts.speak("앱에서 오류가 발생했어요.");
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //       final decodedBody = utf8.decode(response.bodyBytes);
+  //       final result = jsonDecode(decodedBody);
+  //       final summary = result['summary'] ?? '요약 응답이 없습니다.';
+  //       setState(() => responseText = summary);
+  //       await flutterTts.speak(summary);
+  //     } else {
+  //       setState(() => responseText = '서버 응답 오류: ${response.statusCode}');
+  //       await flutterTts.speak('서버 응답 오류');
+  //     }
+  //   } catch (e) {
+  //     print("에러: $e");
+  //     setState(() => responseText = '오류 발생: $e');
+  //     await flutterTts.speak("앱에서 오류가 발생했어요.");
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -154,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       aspectRatio: 3 / 4,
                       child: CameraPreview(_cameraController!),
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: _sendTestQuestionWithImage,
-                      child: const Text('testButton'),
-                    ),
+                    // const SizedBox(height: 12),
+                    // ElevatedButton(
+                    //   onPressed: _sendTestQuestionWithImage,
+                    //   child: const Text('testButton'),
+                    // ),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -177,12 +178,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        responseText,
-                        style: const TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          responseText,
+                          style: const TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
                   ],
