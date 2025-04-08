@@ -110,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const testQuestion = '이 상품의 정보를 알려줘';
 
       final response = await http.post(
-        Uri.parse('http://$ipAddress:8000/analyze'),
+        Uri.parse('$ipAddress/analyze'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'image_base64': base64Image,
