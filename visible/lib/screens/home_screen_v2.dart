@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final q = overrideQuestion ?? question;
 
       final response = await http.post(
-        Uri.parse('$ipAddress:8000/analyze'),
+        Uri.parse('$ipAddress/analyze'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'image_base64': base64Image, 'question': q}),
       );
