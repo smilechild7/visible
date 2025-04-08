@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -47,25 +49,82 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickImageAndSend() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null && question.isNotEmpty) {
+    try {
+      final pickedFile = await picker.pickImage(source: ImageSource.camera);
+      if (pickedFile == null) {
+        print("이미지를 선택하지 않았습니다.");
+        return;
+      }
+
+      if (question.isEmpty) {
+        print("질문이 없습니다.");
+        await flutterTts.speak("먼저 질문을 말해주세요.");
+        return;
+      }
+
       final bytes = await pickedFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      final uri = Uri.parse('http://localhost:8000/analyze'); // ← 백엔드 주소
+      final uri = Uri.parse('http://192.0.0.2:8000/analyze'); // 실제 IP 주소 사용
+      print("서버에 요청 보냄...");
+
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'image_base64': base64Image, 'question': question}),
       );
 
+      print('응답 코드: ${response.statusCode}');
+      print('응답 본문: ${response.body}');
+
       if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        setState(() => responseText = result['summary']);
-        await flutterTts.speak(responseText);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final result = jsonDecode(decodedBody);
+        final summary = result['summary'] ?? '요약 응답이 없습니다.';
+        setState(() => responseText = summary);
+        await flutterTts.speak(summary);
       } else {
         await flutterTts.speak('서버에서 응답을 받지 못했어요.');
       }
+    } catch (e, stackTrace) {
+      print("예외 발생: $e");
+      print(stackTrace);
+      await flutterTts.speak("앱에서 오류가 발생했어요.");
+    }
+  }
+
+  Future<void> _sendTestQuestionWithImage() async {
+    try {
+      final bytes = await rootBundle.load('assets/test_image.png');
+      final base64Image = base64Encode(bytes.buffer.asUint8List());
+      final testQuestion = '이 상품의 정보를 알려줘';
+
+      final uri = Uri.parse('http://192.0.0.2:8000/analyze'); // 실제 IP 주소 사용
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'image_base64': base64Image,
+          'question': testQuestion,
+        }),
+      );
+
+      print('응답 코드: ${response.statusCode}');
+      print('응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final result = jsonDecode(decodedBody);
+        final summary = result['summary'] ?? '요약 응답이 없습니다.';
+        setState(() => responseText = summary);
+        await flutterTts.speak(summary);
+      } else {
+        await flutterTts.speak('서버에서 응답을 받지 못했어요.');
+      }
+    } catch (e) {
+      print("예외 발생: $e");
+      await flutterTts.speak("앱에서 오류가 발생했어요.");
     }
   }
 
@@ -88,6 +147,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
             Text(responseText, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _sendTestQuestionWithImage,
+              child: const Text('테스트 질문 보내기'),
+            ),
           ],
         ),
       ),
