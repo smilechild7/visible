@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String question = '';
   bool isListening = false;
   String responseText = '';
-  String ipAddress = '192.168.0.15'; // ✅ 여기에 실제 서버 IP
+  String ipAddress = 'https://visible-rjaw.onrender.com'; // ✅ 여기에 실제 서버 IP
   bool _isCapturing = false; // ✅ 중복 방지용
 
   @override
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final q = overrideQuestion ?? question;
 
       final response = await http.post(
-        Uri.parse('http://$ipAddress:8000/analyze'),
+        Uri.parse('$ipAddress:8000/analyze'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'image_base64': base64Image, 'question': q}),
       );
