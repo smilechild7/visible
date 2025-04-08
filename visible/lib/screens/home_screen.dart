@@ -22,11 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String question = '';
   bool isListening = false;
   String responseText = '';
-
+  String ipAddress = '192.168.0.15';
   @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
+    flutterTts.setLanguage('ko-KR'); // 한국어로 말함
   }
 
   Future<void> _startListening() async {
@@ -39,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
             question = result.recognizedWords;
           });
         },
+        localeId: 'ko_KR', // 한국어로 인식
       );
     }
   }
@@ -65,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final bytes = await pickedFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      final uri = Uri.parse('http://192.0.0.2:8000/analyze'); // 실제 IP 주소 사용
+      final uri = Uri.parse('http://$ipAddress:8000/analyze'); // 실제 IP 주소 사용
       print("서버에 요청 보냄...");
 
       final response = await http.post(
@@ -116,7 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final result = jsonDecode(decodedBody);
+        print(result);
         final summary = result['summary'] ?? '요약 응답이 없습니다.';
+        print(summary);
         setState(() => responseText = summary);
         await flutterTts.speak(summary);
       } else {
