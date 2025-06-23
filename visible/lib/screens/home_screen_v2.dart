@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -37,13 +36,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initCamera() async {
-    final cameras = await availableCameras();
-    _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
-    await _cameraController!.initialize();
-    if (mounted) setState(() {});
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        print("⚠️ 사용 가능한 카메라가 없습니다.");
+        return;
+      }
+      _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
+      await _cameraController!.initialize();
+      if (mounted) setState(() {});
+    } catch (e) {
+      print("카메라 초기화 오류: $e");
+    }
   }
 
-  Future<void> _takePictureAndSend({String? overrideQuestion}) async {
+  Future<void> takePictureAndSend({String? overrideQuestion}) async {
     if (_isCapturing) return; // ✅ 중복 캡처 방지
     _isCapturing = true;
 
@@ -78,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _startListeningAndTakePicture() async {
+  Future<void> startListeningAndTakePicture() async {
     bool available = await _speech.initialize();
     if (available) {
       setState(() => isListening = true);
@@ -91,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
           await _speech.stop();
           setState(() => isListening = false);
           if (question.trim().isNotEmpty) {
-            await _takePictureAndSend();
+            await takePictureAndSend();
           } else {
             setState(() => responseText = '질문이 인식되지 않았어요.');
             await flutterTts.speak("질문이 인식되지 않았어요.");
@@ -164,30 +171,81 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        ElevatedButton(
-                          onPressed: _startListeningAndTakePicture,
-                          child: const Text('button1'),
-                        ),
-                        ElevatedButton(
-                          onPressed:
-                              () => _takePictureAndSend(
-                                overrideQuestion: '상품의 정보들을 쭉 말해줘',
-                              ),
-                          child: const Text('button2'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // 버튼1
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // 버튼1: 대화하기 → 채팅 아이콘
+                                SizedBox(
+                                  width: 180,
+                                  height: 200,
+                                  child: ElevatedButton(
+                                    onPressed: startListeningAndTakePicture,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueAccent,
+                                      elevation: 4,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.chat_bubble_outline,
+                                      size: 64,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                // 버튼2: 대상 설명 듣기 → 정보 아이콘
+                                SizedBox(
+                                  width: 180,
+                                  height: 200,
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        () => takePictureAndSend(
+                                          overrideQuestion: '상품의 정보들을 쭉 말해줘',
+                                        ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        64,
+                                        198,
+                                        251,
+                                      ),
+                                      elevation: 4,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.hearing_outlined,
+                                      size: 64,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          responseText,
-                          style: const TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
+                    // Expanded(
+                    //   child: SingleChildScrollView(
+                    //     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    //     child: Text(
+                    //       responseText,
+                    //       style: const TextStyle(fontSize: 16),
+                    //       textAlign: TextAlign.center,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
       ),

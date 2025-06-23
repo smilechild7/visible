@@ -12,7 +12,7 @@ async def analyze_image_and_question(image_base64: str, question: str) -> str:
     messages = [
         {
             "role": "system",
-            "content": "당신은 시각장애인을 위한 편의점 상품 안내 도우미입니다. 상품 이름, 가격, 유통기한, 할인정보를 간결하게, 한국어로 설명하세요."
+            "content": "당신은 시각장애인의 이동을 위한 도우미입니다. 사진 속에서 이동과 관련된 내용을 요약해줘.(계단, 장애물, 장소 등) 한국어로 설명하세요."
         },
         {
             "role": "user",
